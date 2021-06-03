@@ -579,6 +579,27 @@ impl Agent {
         lookup_request_status(cert, request_id)
     }
 
+    /// Like `request_status_raw`, except it takes a pre-signed serialized envelope.
+    /// Hence the agent's `Identity` provider will not be used.
+    pub async fn read_status_raw_envelope(
+        &self,
+        envelope: Vec<u8>,
+        request_id: &RequestId,
+        effective_canister_id: Principal,
+    ) -> Result<RequestStatusResponse, AgentError> {
+        let bytes = self
+            .transport
+            .read_state(effective_canister_id, envelope)
+            .await?;
+
+        let read_state_response: ReadStateResponse =
+            serde_cbor::from_slice(&bytes).map_err(AgentError::InvalidCborData)?;
+        let cert: Certificate = serde_cbor::from_slice(&read_state_response.certificate)
+            .map_err(AgentError::InvalidCborData)?;
+        self.verify(&cert)?;
+        lookup_request_status(cert, request_id)
+    }
+
     /// Returns an UpdateBuilder enabling the construction of an update call without
     /// passing all arguments.
     pub fn update<S: Into<String>>(
