@@ -390,7 +390,7 @@ impl Agent {
                         value_cbor: method_name_cbor.to_string(),
                     });
                 }
-                if arg != arg_cbor {
+                if arg != arg_cbor.as_slice() {
                     return Err(AgentError::CallDataMismatch {
                         field: "arg".to_string(),
                         value_arg: format!("{:?}", arg),
@@ -499,7 +499,7 @@ impl Agent {
                         value_cbor: method_name_cbor.to_string(),
                     });
                 }
-                if arg != arg_cbor {
+                if arg != arg_cbor.as_slice() {
                     return Err(AgentError::CallDataMismatch {
                         field: "arg".to_string(),
                         value_arg: format!("{:?}", arg),
