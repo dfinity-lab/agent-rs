@@ -420,6 +420,19 @@ impl Agent {
     ) -> Result<Vec<u8>, AgentError> {
         let _envelope: Envelope<QueryContent> =
             serde_cbor::from_slice(&signed_query).map_err(AgentError::InvalidCborData)?;
+        self.query_signed_unchecked(effective_canister_id, signed_query)
+            .await
+    }
+
+    /// Send the signed query to the network. Will return a byte vector.
+    /// The bytes will not be checked if it is a valid query.
+    ///
+    /// This method should only be used over `query_signed` if your signed_query is not cbor encoded.
+    pub async fn query_signed_unchecked(
+        &self,
+        effective_canister_id: Principal,
+        signed_query: Vec<u8>,
+    ) -> Result<Vec<u8>, AgentError> {
         self.query_endpoint::<replica_api::QueryResponse>(effective_canister_id, signed_query)
             .await
             .and_then(|response| match response {
@@ -480,6 +493,20 @@ impl Agent {
         let envelope: Envelope<CallRequestContent> =
             serde_cbor::from_slice(&signed_update).map_err(AgentError::InvalidCborData)?;
         let request_id = to_request_id(&envelope.content)?;
+        self.call_endpoint(effective_canister_id, request_id, signed_update)
+            .await
+    }
+
+    /// Send the signed update to the network. Will return a [`RequestId`].
+    /// The bytes will not be checked to verify that it is a valid update.
+    ///
+    /// This method should only be used over `update_signed` if your `signed_update` is not cbor encoded.
+    pub async fn update_signed_unchecked(
+        &self,
+        request_id: RequestId,
+        effective_canister_id: Principal,
+        signed_update: Vec<u8>,
+    ) -> Result<RequestId, AgentError> {
         self.call_endpoint(effective_canister_id, request_id, signed_update)
             .await
     }
@@ -673,6 +700,24 @@ impl Agent {
     ) -> Result<RequestStatusResponse, AgentError> {
         let _envelope: Envelope<ReadStateContent> =
             serde_cbor::from_slice(&signed_request_status).map_err(AgentError::InvalidCborData)?;
+        self.request_status_signed_unchecked(
+            request_id,
+            effective_canister_id,
+            signed_request_status,
+        )
+        .await
+    }
+
+    /// Send the signed request_status to the network. Will return [`RequestStatusResponse`].
+    /// The bytes will not be checked to verify that it is a valid request_status.
+    ///
+    /// This method should only be used over `request_status_signed` if your `signed_request_status` is not cbor encoded.
+    pub async fn request_status_signed_unchecked(
+        &self,
+        request_id: &RequestId,
+        effective_canister_id: Principal,
+        signed_request_status: Vec<u8>,
+    ) -> Result<RequestStatusResponse, AgentError> {
         let read_state_response: ReadStateResponse = self
             .read_state_endpoint(effective_canister_id, signed_request_status)
             .await?;
